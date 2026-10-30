@@ -1,0 +1,131 @@
+quiet_hours: [0, 1, 2, 3, 4]
+session:
+  start: "09:30"
+  end: "16:00"
+first_window_hours: 36
+shrink_until: 20
+heavyweights:
+  - Apple
+  - Microsoft
+  - Nvidia
+  - Amazon
+  - Alphabet
+  - Meta
+  - Broadcom
+  - Berkshire
+  - Eli Lilly
+  - JPMorgan
+allowlist:
+  - www.federalreserve.gov
+  - federalreserve.gov
+  - www.eia.gov
+  - eia.gov
+  - www.bls.gov
+  - bls.gov
+  - www.treasury.gov
+  - home.treasury.gov
+  - www.gdacs.org
+  - gdacs.org
+  - www.reuters.com
+  - reuters.com
+  - www.cnbc.com
+  - cnbc.com
+  - feeds.finance.yahoo.com
+  - finance.yahoo.com
+sources:
+  - id: yahoo-gspc
+    beat: global
+    kind: rss
+    url: "https://feeds.finance.yahoo.com/rss/2.0/headline?s=%5EGSPC&region=US&lang=en-US"
+  - id: yahoo-n225
+    beat: global
+    kind: rss
+    url: "https://feeds.finance.yahoo.com/rss/2.0/headline?s=%5EN225&region=US&lang=en-US"
+  - id: yahoo-hsi
+    beat: global
+    kind: rss
+    url: "https://feeds.finance.yahoo.com/rss/2.0/headline?s=%5EHSI&region=US&lang=en-US"
+  - id: yahoo-vix
+    beat: global
+    kind: rss
+    url: "https://feeds.finance.yahoo.com/rss/2.0/headline?s=%5EVIX&region=US&lang=en-US"
+  - id: fed-press
+    beat: policy
+    kind: rss
+    url: "https://www.federalreserve.gov/feeds/press_monetary.xml"
+  - id: bls-news
+    beat: policy
+    kind: rss
+    url: "https://www.bls.gov/feed/bls_latest.rss"
+  - id: eia-press
+    beat: crude
+    kind: rss
+    url: "https://www.eia.gov/rss/press_rss.xml"
+  - id: yahoo-wti
+    beat: crude
+    kind: rss
+    url: "https://feeds.finance.yahoo.com/rss/2.0/headline?s=CL%3DF&region=US&lang=en-US"
+  - id: yahoo-crude
+    beat: crude
+    kind: rss
+    url: "https://feeds.finance.yahoo.com/rss/2.0/headline?s=BZ%3DF&region=US&lang=en-US"
+  - id: yahoo-dxy
+    beat: fx
+    kind: rss
+    url: "https://feeds.finance.yahoo.com/rss/2.0/headline?s=DX-Y.NYB&region=US&lang=en-US"
+  - id: reuters-markets
+    beat: flows
+    kind: rss
+    url: "https://www.reuters.com/markets/rss"
+  - id: cnbc-markets
+    beat: flows
+    kind: rss
+    url: "https://search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=20910258"
+  - id: yahoo-aapl
+    beat: weights
+    kind: rss
+    url: "https://feeds.finance.yahoo.com/rss/2.0/headline?s=AAPL&region=US&lang=en-US"
+  - id: yahoo-msft
+    beat: weights
+    kind: rss
+    url: "https://feeds.finance.yahoo.com/rss/2.0/headline?s=MSFT&region=US&lang=en-US"
+  - id: yahoo-nvda
+    beat: weights
+    kind: rss
+    url: "https://feeds.finance.yahoo.com/rss/2.0/headline?s=NVDA&region=US&lang=en-US"
+  - id: yahoo-amzn
+    beat: weights
+    kind: rss
+    url: "https://feeds.finance.yahoo.com/rss/2.0/headline?s=AMZN&region=US&lang=en-US"
+  - id: yahoo-googl
+    beat: weights
+    kind: rss
+    url: "https://feeds.finance.yahoo.com/rss/2.0/headline?s=GOOGL&region=US&lang=en-US"
+  - id: yahoo-meta
+    beat: weights
+    kind: rss
+    url: "https://feeds.finance.yahoo.com/rss/2.0/headline?s=META&region=US&lang=en-US"
+  - id: yahoo-avgo
+    beat: weights
+    kind: rss
+    url: "https://feeds.finance.yahoo.com/rss/2.0/headline?s=AVGO&region=US&lang=en-US"
+  - id: yahoo-brk
+    beat: weights
+    kind: rss
+    url: "https://feeds.finance.yahoo.com/rss/2.0/headline?s=BRK-B&region=US&lang=en-US"
+  - id: yahoo-lly
+    beat: weights
+    kind: rss
+    url: "https://feeds.finance.yahoo.com/rss/2.0/headline?s=LLY&region=US&lang=en-US"
+  - id: yahoo-jpm
+    beat: weights
+    kind: rss
+    url: "https://feeds.finance.yahoo.com/rss/2.0/headline?s=JPM&region=US&lang=en-US"
+  - id: gdacs
+    beat: global
+    kind: rss
+    url: "https://www.gdacs.org/xml/rss.xml"
+  - id: cboe-pcr
+    beat: pcr
+    kind: pcr
+    url: "https://www.cboe.com/markets/us/options/market-statistics/daily/"

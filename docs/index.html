@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="refresh" content="60">
+<title>S&P 500 board</title>
+<style>
+  body { margin: 0; background: #efeae3; color: #1c1915; font: 16px/1.45 ui-sans-serif, system-ui, sans-serif; }
+  main { max-width: 1040px; margin: 0 auto; padding: 20px 16px 80px; }
+  .mast { display: flex; justify-content: space-between; align-items: flex-end; gap: 16px; margin-bottom: 8px; }
+  h1 { margin: 0; font: 600 12px/1.2 ui-sans-serif, sans-serif; letter-spacing: .14em; text-transform: uppercase; color: #746c62; }
+  .sub { margin: 4px 0 0; color: #1c1915; font: 600 36px/1.05 ui-sans-serif, sans-serif; letter-spacing: -.03em; font-variant-numeric: tabular-nums; }
+  .lead { margin: 0 0 16px; color: #5e584f; font: 15px/1.4 ui-sans-serif, sans-serif; }
+  .status { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin: 0; padding: 7px 12px 7px 10px; background: #fff; border: 1px solid #e4ddd2; border-radius: 999px; font: 13px/1.3 ui-sans-serif, sans-serif; color: #5e584f; }
+  .light { width: 10px; height: 10px; border-radius: 50%; background: #b9b2a6; display: inline-block; flex: none; }
+  .light.on { background: #0c7a3a; animation: pulse 1.6s infinite; }
+  @keyframes pulse {
+    0% { box-shadow: 0 0 0 0 rgba(12, 122, 58, .45); }
+    70% { box-shadow: 0 0 0 8px rgba(12, 122, 58, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(12, 122, 58, 0); }
+  }
+  .state { color: #1c1915; font-weight: 650; }
+  .topline { background: #fff; border: 1px solid #e4ddd2; border-radius: 16px; margin: 0 0 16px; padding: 12px 14px 4px; box-shadow: inset 0 3px 0 #1d4e89; }
+  .top-grid { display: grid; grid-template-columns: 1.5fr .9fr .9fr; gap: 12px; }
+  .top-card span { display: block; color: #746c62; font: 600 11px/1.2 ui-sans-serif, sans-serif; letter-spacing: .06em; text-transform: uppercase; }
+  .top-pair { display: flex; flex-wrap: wrap; gap: 14px; align-items: flex-end; margin-top: 6px; }
+  .top-pair b { display: block; color: #1c1915; font: 600 26px/1 ui-sans-serif, sans-serif; letter-spacing: -.03em; font-variant-numeric: tabular-nums; }
+  .top-pair small { display: block; margin-top: 4px; color: #746c62; font: 600 13px/1.2 ui-sans-serif, sans-serif; font-variant-numeric: tabular-nums; }
+  .top-pair small.plus { color: #0c7a3a; }
+  .top-pair small.minus { color: #c62828; }
+  .top-pair .plus b { color: #0c7a3a; }
+  .top-pair .minus b { color: #c62828; }
+  .topline .call-plot { margin-top: 4px; }
+  .stats { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 0 0 16px; }
+  .stats .tile { background: #fff; border: 1px solid #e4ddd2; border-radius: 16px; padding: 14px 16px; min-width: 0; }
+  .stats .tile.plus { background: #f3faf6; border-color: #d5eadc; }
+  .stats .tile.minus { background: #fdf6f5; border-color: #f0d6d3; }
+  .stats span { display: block; color: #746c62; font: 600 11px/1.2 ui-sans-serif, sans-serif; letter-spacing: .06em; text-transform: uppercase; }
+  .stats strong { display: block; margin-top: 4px; font: 600 22px/1.2 ui-sans-serif, sans-serif; font-variant-numeric: tabular-nums; }
+  .stats em { display: block; margin-top: 6px; color: #5e584f; font: 13px/1.35 ui-sans-serif, sans-serif; font-style: normal; }
+  .note { margin: 0 0 16px; padding: 10px 12px; background: #f7f3fb; border: 1px solid #e4d8f2; border-radius: 10px; color: #5c4d73; font: 14px/1.4 ui-sans-serif, sans-serif; }
+  figure { background: #fff; border: 1px solid #e4ddd2; border-radius: 16px; margin: 0 0 16px; padding: 8px 8px 0; box-shadow: inset 0 3px 0 #6b3fa0; }
+  figure.errors { box-shadow: inset 0 3px 0 #c4b8a8; }
+  figure.errors svg { max-height: 420px; }
+  .error-read { margin: 8px 10px 0; color: #1c1915; font: 600 15px/1.35 ui-sans-serif, sans-serif; }
+  .error-note { margin: 2px 10px 0; color: #746c62; font: 13px/1.35 ui-sans-serif, sans-serif; }
+  figcaption { font: 13px/1.45 ui-sans-serif, sans-serif; color: #5e584f; padding: 6px 8px 12px; }
+  .mark-spot { color: #0c7a3a; font-weight: 650; }
+  .mark-gift { color: #b86e00; font-weight: 650; }
+  .mark-next { color: #1d4e89; font-weight: 650; }
+  .mark-mean { color: #6b3fa0; font-weight: 650; }
+  svg { width: 100%; height: auto; display: block; }
+  .split, .desk { display: grid; grid-template-columns: 1.15fr .85fr; gap: 16px; align-items: start; margin: 0 0 16px; }
+  .split > :only-child { grid-column: 1 / -1; }
+  .roster, .learn { margin: 0; background: #fff; border: 1px solid #e4ddd2; border-radius: 16px; overflow: hidden; }
+  .roster { box-shadow: inset 3px 0 0 #9a9186; }
+  .learn { box-shadow: inset 3px 0 0 #6b3fa0; }
+  .roster-head { display: flex; justify-content: space-between; align-items: baseline; padding: 12px 14px 2px; font: 600 12px/1.2 ui-sans-serif, sans-serif; letter-spacing: .06em; text-transform: uppercase; color: #4a453e; }
+  .count { color: #0c7a3a; letter-spacing: 0; }
+  .count.short { color: #8a5a00; }
+  .deck { margin: 0 0 8px; color: #746c62; font: 13px/1.35 ui-sans-serif, sans-serif; }
+  .roster .deck, .learn .deck { padding: 0 14px 8px; }
+  .matters { display: grid; grid-template-columns: 1.15fr .85fr; gap: 16px; align-items: start; margin: 0 0 16px; }
+  .matters section { background: #fff; border: 1px solid #e4ddd2; border-radius: 16px; padding: 14px 16px 12px; }
+  .matters section:first-child { box-shadow: inset 3px 0 0 #1d4e89; }
+  .matters section:last-child { box-shadow: inset 3px 0 0 #c4a574; }
+  .matters h2, .ahead h2, .compare h2 { margin: 0 0 4px; display: flex; justify-content: space-between; align-items: baseline; gap: 12px; font: 600 12px/1.2 ui-sans-serif, sans-serif; letter-spacing: .06em; text-transform: uppercase; color: #4a453e; }
+  .matters h2 .impact, .ahead h2 .impact { letter-spacing: 0; font-size: 22px; }
+  .matter { display: flex; gap: 10px; align-items: baseline; padding: 8px; margin-top: 6px; border-radius: 8px; }
+  .matter.ok { background: #f7f8f6; }
+  .matter.idle { background: #fbf6ee; }
+  .matter.bad { background: #fdf4f3; }
+  .matter.bad .line { color: #8a1c1c; }
+  .matter.idle .line { color: #8a5a00; }
+  .agent { display: flex; gap: 10px; align-items: baseline; padding: 8px 14px; border-top: 1px solid #f0ebe3; }
+  .agent.ok { box-shadow: inset 3px 0 0 #cfe8d8; }
+  .agent.idle { background: #fbf6ee; box-shadow: inset 3px 0 0 #e4c48a; }
+  .agent.bad { background: #fdf4f3; box-shadow: inset 3px 0 0 #e7b4ae; }
+  .dot { width: 8px; height: 8px; border-radius: 50%; background: #b9b2a6; flex: none; align-self: center; }
+  .dot.ok { background: #0c7a3a; }
+  .dot.idle { background: #b86e00; }
+  .dot.bad { background: #c62828; }
+  .name { width: 84px; flex: none; font: 600 13px/1.3 ui-sans-serif, sans-serif; color: #3f3a34; }
+  .line { flex: 1; min-width: 0; }
+  .trail, .score { margin: 0; padding: 8px 14px; border-top: 1px solid #f0ebe3; color: #746c62; font: 13px/1.35 ui-sans-serif, sans-serif; font-variant-numeric: tabular-nums; }
+  .score, .how { color: #1c1915; background: #f7f3fb; }
+  .how { font: 15px/1.45 ui-sans-serif, sans-serif; }
+  .impact { flex: none; min-width: 52px; text-align: right; font: 600 16px/1 ui-sans-serif, sans-serif; font-variant-numeric: tabular-nums; }
+  .matter .impact, .agent .impact, .off .impact { padding: 2px 8px; border-radius: 999px; background: #f4f1ea; }
+  .plus { color: #0c7a3a; }
+  .minus { color: #c62828; }
+  .flat { color: #5e584f; }
+  .matter .plus, .agent .plus, .off .plus { background: #e7f5ec; }
+  .matter .minus, .agent .minus, .off .minus { background: #fdeceb; }
+  .empty { margin: 0; padding: 16px; color: #746c62; background: #fff; border: 1px solid #e4ddd2; border-radius: 12px; }
+  .learn-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; padding: 0 14px 8px; }
+  .learn-card { display: grid; grid-template-columns: 1fr auto auto; align-items: baseline; gap: 2px 8px; border: 1px solid #efeae2; border-radius: 10px; padding: 8px 10px 6px; }
+  .learn-plot, .gain-plot { grid-column: 1 / -1; width: 100%; height: auto; }
+  .gain-banner { padding: 0 14px 10px; }
+  .gain-read { margin: 0 0 2px; color: #3f3a34; font: 600 15px/1 ui-sans-serif, sans-serif; }
+  .gain-read strong { font-size: 28px; margin-right: 6px; letter-spacing: 0; }
+  .proof { margin: 8px 0 2px; }
+  .proof p { display: grid; grid-template-columns: 58px 42px 1fr; gap: 8px; align-items: center; margin: 5px 0; color: #3f3a34; font: 13px/1.2 ui-sans-serif, sans-serif; }
+  .proof b { font-variant-numeric: tabular-nums; }
+  .proof i { display: block; height: 8px; border-radius: 99px; background: #f3efe8; }
+  .proof em { display: block; height: 8px; border-radius: 99px; background: #6b3fa0; }
+  .proof-note { margin: 4px 0 8px; color: #5e584f; font: 13px/1.4 ui-sans-serif, sans-serif; }
+  .gain { font-weight: 650; font-variant-numeric: tabular-nums; }
+  .gain.up { color: #0c7a3a; }
+  .gain.down { color: #c62828; }
+  .gain.flat { color: #5e584f; }
+  .learn .line.up { color: #0c7a3a; font-weight: 650; }
+  .learn .line.down { color: #c62828; font-weight: 650; }
+  .learn .wait { padding: 2px 14px 14px; margin: 0; }
+  .ahead, .compare { background: #fff; border: 1px solid #e4ddd2; border-radius: 16px; margin: 0; padding: 14px 16px 12px; box-shadow: inset 0 3px 0 #1d4e89; }
+  .ahead .name { width: auto; flex: 1; }
+  .ahead .matter { margin-top: 0; padding: 8px 0; border-radius: 0; background: transparent; border-top: 1px solid #f0ebe3; }
+  .ahead .due { margin: 0 0 4px; color: #746c62; font: 13px/1.35 ui-sans-serif, sans-serif; }
+  .compare .story { margin: 8px 0 0; color: #1c1915; font: 16px/1.5 ui-sans-serif, sans-serif; }
+  .compare .story strong { font-variant-numeric: tabular-nums; }
+  .compare .call-plot { margin: 2px 0 8px; }
+  .learn, .news { margin-top: 16px; }
+  .news { background: #fff; border: 1px solid #e4ddd2; border-radius: 16px; overflow: hidden; box-shadow: inset 3px 0 0 #1d4e89; }
+  .news-cols { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; padding: 0 14px 14px; }
+  .news h2 { margin: 0 0 4px; font: 600 12px/1.2 ui-sans-serif, sans-serif; letter-spacing: .06em; text-transform: uppercase; color: #746c62; }
+  .news-row { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; padding: 6px 0; border-top: 1px solid #f0ebe3; }
+  .news-row .name { width: auto; flex: 1; }
+  .news .pts { flex: none; font: 600 16px/1 ui-sans-serif, sans-serif; font-variant-numeric: tabular-nums; color: #1c1915; }
+  .news-col.lighter .pts { color: #8a5a00; }
+  .news .quiet { margin: 0; color: #746c62; font: 14px/1.4 ui-sans-serif, sans-serif; }
+  .feeds { background: #fff; border: 1px solid #e4ddd2; border-radius: 16px; margin: 0 0 16px; padding: 14px 16px 16px; box-shadow: inset 3px 0 0 #1d4e89; }
+  .feeds h2 { margin: 0 0 8px; font: 600 12px/1.2 ui-sans-serif, sans-serif; letter-spacing: .06em; text-transform: uppercase; color: #4a453e; }
+  .feed-read { margin: 0 0 12px; color: #1c1915; font: 600 15px/1.35 ui-sans-serif, sans-serif; }
+  .feed-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; align-items: start; }
+  .feed { display: block; padding: 10px 12px 12px; border-radius: 12px; background: #faf8f5; border: 1px solid #efeae2; }
+  .feed.bad { background: #fdf4f3; border-color: #f0d6d3; }
+  .feed.idle { background: #fbf6ee; border-color: #f0e4cc; }
+  .feed-head { display: flex; justify-content: space-between; gap: 8px; align-items: baseline; }
+  .feed .name { width: auto; font-size: 15px; }
+  .feed .line { color: #746c62; font: 13px/1.3 ui-sans-serif, sans-serif; }
+  .feed-empty { margin: 8px 0 0; color: #8a1c1c; font: 14px/1.35 ui-sans-serif, sans-serif; }
+  .feed.idle .feed-empty { color: #8a5a00; }
+  .fate-bar { display: flex; height: 14px; margin: 10px 0 6px; border-radius: 999px; overflow: hidden; background: #f4f1ea; }
+  .fate-bar span { min-width: 8px; }
+  .fate-bar .up { background: #0c7a3a; }
+  .fate-bar .down { background: #c62828; }
+  .fate-bar .flat { background: #1d4e89; }
+  .fate-bar .watch { background: #e4c48a; }
+  .fate-bar .aside { background: #c4b8a8; }
+  .fate-key { display: flex; flex-wrap: wrap; gap: 6px 14px; margin: 0; color: #3f3a34; font: 13px/1.3 ui-sans-serif, sans-serif; }
+  .fate-key strong { font-variant-numeric: tabular-nums; }
+  .swatch { width: 8px; height: 8px; margin-right: 4px; border-radius: 2px; display: inline-block; vertical-align: 1px; }
+  .swatch.up { background: #0c7a3a; }
+  .swatch.down { background: #c62828; }
+  .swatch.flat { background: #1d4e89; }
+  .swatch.none { background: transparent; border: 1px solid #c4b8a8; box-sizing: border-box; }
+  .swatch.watch { background: #e4c48a; }
+  .swatch.aside { background: #c4b8a8; }
+  .fate-group { margin-top: 12px; }
+  .fate-group h3 { margin: 0; font: 600 11px/1.2 ui-sans-serif, sans-serif; letter-spacing: .06em; text-transform: uppercase; color: #746c62; }
+  .fate-deck, .fate-group .quiet { margin: 3px 0 0; color: #746c62; font: 12px/1.35 ui-sans-serif, sans-serif; }
+  .story { display: flex; gap: 8px; align-items: baseline; padding: 6px 0; border-top: 1px solid #f0ebe3; }
+  .story .title { flex: 1; min-width: 0; color: #1c1915; font: 13px/1.35 ui-sans-serif, sans-serif; }
+  .story .why { display: block; margin-top: 1px; color: #746c62; font: 12px/1.3 ui-sans-serif, sans-serif; }
+  .story .impact { min-width: 0; padding: 2px 8px; border-radius: 999px; background: #f4f1ea; }
+  .story .plus { background: #e7f5ec; }
+  .story .minus { background: #fdeceb; }
+  .story.aside .title { color: #5e584f; }
+  .watch-pile { margin-top: 12px; }
+  .watch-pile summary { cursor: pointer; color: #5e584f; font: 600 13px/1.3 ui-sans-serif, sans-serif; }
+  .watch-pile summary::-webkit-details-marker { display: none; }
+  .watch-pile summary::before { content: "▸ "; color: #746c62; }
+  .watch-pile[open] summary::before { content: "▾ "; }
+  .range-top { background: #fff; border: 1px solid #e4ddd2; border-radius: 16px; margin: 0 0 16px; padding: 14px 16px 10px; box-shadow: inset 0 3px 0 #6b3fa0; }
+  .range-top h2 { margin: 0; font: 600 12px/1.2 ui-sans-serif, sans-serif; letter-spacing: .08em; text-transform: uppercase; color: #4a453e; }
+  .range-top .expect { margin: 6px 0 0; color: #1c1915; font: 600 34px/1.1 ui-sans-serif, sans-serif; letter-spacing: -.03em; font-variant-numeric: tabular-nums; }
+  .range-top .due, .range-top .deck { margin: 4px 0 0; color: #746c62; font: 13px/1.4 ui-sans-serif, sans-serif; }
+  .range-top svg { width: 100%; height: auto; display: block; margin-top: 2px; }
+  .range-key { display: flex; flex-wrap: wrap; gap: 8px 18px; margin: 2px 0 0; color: #3f3a34; font: 14px/1.3 ui-sans-serif, sans-serif; }
+  .swatch { display: inline-block; width: 9px; height: 9px; border-radius: 50%; margin-right: 4px; }
+  .swatch.spot { background: #0c7a3a; }
+  .swatch.gift { background: #c47b12; }
+  .pill { margin-left: 4px; font-style: normal; font-size: 11px; letter-spacing: .04em; text-transform: uppercase; color: #746c62; }
+  .pill.on { color: #0c7a3a; }
+  .session { background: #fff; border: 1px solid #e4ddd2; border-radius: 16px; margin: 0 0 16px; padding: 14px 16px 12px; box-shadow: inset 0 3px 0 #6b3fa0; }
+  .hour > h2 { margin: 18px 0 0; font: 600 12px/1.2 ui-sans-serif, sans-serif; letter-spacing: .08em; text-transform: uppercase; color: #4a453e; }
+  .session h2 { margin: 0; display: flex; justify-content: space-between; align-items: baseline; gap: 12px; font: 600 12px/1.2 ui-sans-serif, sans-serif; letter-spacing: .06em; text-transform: uppercase; color: #4a453e; }
+  .session h2 .impact { letter-spacing: 0; font-size: 28px; }
+  .session .expect { margin: 8px 0 0; color: #1c1915; font: 600 32px/1.1 ui-sans-serif, sans-serif; letter-spacing: -.03em; font-variant-numeric: tabular-nums; }
+  .session .expect small { display: block; margin-top: 4px; color: #5e584f; font: 600 14px/1.35 ui-sans-serif, sans-serif; letter-spacing: 0; }
+  .session .due, .session .deck { margin: 4px 0 0; color: #746c62; font: 13px/1.4 ui-sans-serif, sans-serif; }
+  .session .proof-list { margin: 8px 0 0; padding: 0; list-style: none; }
+  .session .proof-list li { padding: 6px 0; border-top: 1px solid #f0ebe3; color: #3f3a34; font: 14px/1.4 ui-sans-serif, sans-serif; }
+  .session .drivers { display: flex; flex-wrap: wrap; gap: 6px 14px; margin: 8px 0 0; }
+  .session .drivers span { color: #3f3a34; font: 13px/1.3 ui-sans-serif, sans-serif; }
+  .story.watch { display: block; padding: 4px 0; }
+  .story.watch .title { color: #5e584f; }
+  @media (max-width: 800px) {
+    .mast { flex-direction: column; align-items: flex-start; }
+    .sub { font-size: 30px; }
+    .split, .matters, .desk, .stats, .feed-row, .learn-grid, .news-cols, .top-grid { grid-template-columns: 1fr; }
+    .compare .story { font-size: 15px; }
+  }
+</style>
+</head>
+<body>
+<main>
+  
+  <header class="mast">
+    <div>
+      <h1>S&P 500 board</h1>
+      <p class="sub" id="spot-title">S&amp;P 500 7,720</p>
+    </div>
+    <div class='status' id='status' data-last='2026-10-30T02:10:06.564129-04:00'><span class='light on' id='light'></span><span class='state' id='state'>Fresh</span><span id='last-run'>Last refresh 30 Oct 02:10</span><span id='next-run'>Next update</span></div>
+  </header>
+  
+  <p class="lead">One guess for the 4:00 pm New York close. Green is up. Red is down.</p>
+  
+  <section class='topline' aria-label='Predictions at a glance'><div class='top-grid'><div class='top-card'><span>Next open</span><div class='top-pair'><p><b>7,684</b><small>09:30 · 30 Oct</small></p></div></div><div class='top-card'><span>ES</span><div class='top-pair'><p><b>7,684</b><small class='minus'>-30.8</small></p></div></div></div><svg class='call-plot' viewBox='0 0 640 82' role='img' aria-label='Predictions on one scale' style='font-family:ui-sans-serif,sans-serif'><line x1='16' y1='28' x2='624' y2='28' stroke='#e4ddd2' stroke-width='4' stroke-linecap='round'/><circle cx='320.0' cy='28' r='5' fill='#1d4e89' stroke='#fff' stroke-width='1.5'/><circle cx='320.0' cy='28' r='5' fill='#b86e00' stroke='#fff' stroke-width='1.5'/><text x='320.0' y='46' text-anchor='middle' font-size='11' fill='#1c1915'>Open 7,684</text><text x='320.0' y='62' text-anchor='middle' font-size='11' fill='#1c1915'>ES 7,684</text></svg></section>
+  <div class="stats">
+    <div class='tile minus'><span>ES</span><strong class='minus'>7,684 -30.8</strong><em>Traded outside the cash session. A plus versus the last close means the next open may be higher.</em></div>
+  </div>
+  <p class='note'>Only 0 checks so far. Treat the line below as a first look.</p>
+  
+  <figure class="forecast"><svg viewBox='0 0 400 224' role='img' aria-label='Prediction' style='font-family:ui-sans-serif,sans-serif'><line x1='28' y1='49.5' x2='372' y2='49.5' stroke='#f3efe8'/><line x1='28' y1='83.0' x2='372' y2='83.0' stroke='#f3efe8'/><line x1='28' y1='116.5' x2='372' y2='116.5' stroke='#f3efe8'/><line x1='28' y1='150' x2='372' y2='150' stroke='#e4ddd2'/><polygon points='46.4,150 46.4,148.5 49.6,148.2 52.7,147.9 55.8,147.4 59.0,146.9 62.1,146.4 65.2,145.7 68.3,145.0 71.5,144.1 74.6,143.1 77.7,142.0 80.9,140.8 84.0,139.3 87.1,137.8 90.3,136.0 93.4,134.0 96.5,131.9 99.7,129.5 102.8,126.9 105.9,124.1 109.1,121.0 112.2,117.7 115.3,114.2 118.4,110.5 121.6,106.5 124.7,102.3 127.8,97.9 131.0,93.4 134.1,88.7 137.2,83.8 140.4,78.8 143.5,73.8 146.6,68.7 149.8,63.7 152.9,58.6 156.0,53.7 159.2,48.9 162.3,44.2 165.4,39.8 168.5,35.6 171.7,31.7 174.8,28.2 177.9,25.1 181.1,22.4 184.2,20.1 187.3,18.3 190.5,17.0 193.6,16.3 196.7,16.0 199.9,16.3 203.0,17.0 206.1,18.3 209.3,20.1 212.4,22.4 215.5,25.1 218.7,28.2 221.8,31.7 224.9,35.6 228.0,39.8 231.2,44.2 234.3,48.9 237.4,53.7 240.6,58.6 243.7,63.7 246.8,68.7 250.0,73.8 253.1,78.8 256.2,83.8 259.4,88.7 262.5,93.4 265.6,97.9 268.8,102.3 271.9,106.5 275.0,110.5 278.1,114.2 281.3,117.7 284.4,121.0 287.5,124.1 290.7,126.9 293.8,129.5 296.9,131.9 300.1,134.0 303.2,136.0 306.3,137.8 309.5,139.3 312.6,140.8 315.7,142.0 318.9,143.1 322.0,144.1 325.1,145.0 328.2,145.7 331.4,146.4 334.5,146.9 337.6,147.4 340.8,147.9 343.9,148.2 347.0,148.5 347.0,150' fill='#6b3fa0' fill-opacity='0.12' stroke='none'/><polyline fill='none' stroke='#6b3fa0' stroke-width='2' points='46.4,148.5 49.6,148.2 52.7,147.9 55.8,147.4 59.0,146.9 62.1,146.4 65.2,145.7 68.3,145.0 71.5,144.1 74.6,143.1 77.7,142.0 80.9,140.8 84.0,139.3 87.1,137.8 90.3,136.0 93.4,134.0 96.5,131.9 99.7,129.5 102.8,126.9 105.9,124.1 109.1,121.0 112.2,117.7 115.3,114.2 118.4,110.5 121.6,106.5 124.7,102.3 127.8,97.9 131.0,93.4 134.1,88.7 137.2,83.8 140.4,78.8 143.5,73.8 146.6,68.7 149.8,63.7 152.9,58.6 156.0,53.7 159.2,48.9 162.3,44.2 165.4,39.8 168.5,35.6 171.7,31.7 174.8,28.2 177.9,25.1 181.1,22.4 184.2,20.1 187.3,18.3 190.5,17.0 193.6,16.3 196.7,16.0 199.9,16.3 203.0,17.0 206.1,18.3 209.3,20.1 212.4,22.4 215.5,25.1 218.7,28.2 221.8,31.7 224.9,35.6 228.0,39.8 231.2,44.2 234.3,48.9 237.4,53.7 240.6,58.6 243.7,63.7 246.8,68.7 250.0,73.8 253.1,78.8 256.2,83.8 259.4,88.7 262.5,93.4 265.6,97.9 268.8,102.3 271.9,106.5 275.0,110.5 278.1,114.2 281.3,117.7 284.4,121.0 287.5,124.1 290.7,126.9 293.8,129.5 296.9,131.9 300.1,134.0 303.2,136.0 306.3,137.8 309.5,139.3 312.6,140.8 315.7,142.0 318.9,143.1 322.0,144.1 325.1,145.0 328.2,145.7 331.4,146.4 334.5,146.9 337.6,147.4 340.8,147.9 343.9,148.2 347.0,148.5'/><line x1='353.6' y1='142' x2='353.6' y2='155' stroke='#0c7a3a' stroke-width='2'/><line x1='146.6' y1='142' x2='146.6' y2='155' stroke='#b86e00' stroke-width='2'/><line x1='246.8' y1='142' x2='246.8' y2='155' stroke='#1d4e89' stroke-width='2'/><line x1='196.7' y1='142' x2='196.7' y2='155' stroke='#6b3fa0' stroke-width='2' stroke-dasharray='3 3'/><text x='28.0' y='168.0' text-anchor='start' font-size='10' fill='#746c62'>7,663</text><text x='114.0' y='168.0' text-anchor='middle' font-size='10' fill='#746c62'>7,678</text><text x='200.0' y='168.0' text-anchor='middle' font-size='10' fill='#746c62'>7,693</text><text x='286.0' y='168.0' text-anchor='middle' font-size='10' fill='#746c62'>7,708</text><text x='372.0' y='168.0' text-anchor='end' font-size='10' fill='#746c62'>7,724</text><circle cx='32' cy='189' r='3.5' fill='#0c7a3a'/><text x='42' y='192' font-size='12' fill='#1c1915'>Spot 7,720</text><circle cx='32' cy='207' r='3.5' fill='#b86e00'/><text x='42' y='210' font-size='12' fill='#1c1915'>ES 7,684</text><circle cx='222' cy='189' r='3.5' fill='#1d4e89'/><text x='232' y='192' font-size='12' fill='#1c1915'>Next -19</text><circle cx='222' cy='207' r='3.5' fill='#6b3fa0'/><text x='232' y='210' font-size='12' fill='#1c1915'>Average 7,693</text></svg><figcaption><span class="mark-spot">Spot</span> is the live index. <span class="mark-gift">ES</span> is the price outside the cash session. <span class="mark-next">Next</span> is this hour's news score, not the 24-hour close. The shaded band is the usual range around the <span class="mark-mean">200-day average</span>. Faint lines are the previous three.</figcaption></figure>
+  <div class='split'><section class='compare' aria-label='Prediction against the S&P 500'><h2>This hour's past guesses</h2><p class='deck'>These guesses come from the news score. They are not the 24-hour range.</p><p class='story'>This prediction was made when the S&P 500 was <strong>7,720</strong> at <strong>02:10</strong> on <strong>30 Oct</strong>. It predicts the S&P 500 will be <strong>7,701</strong> at <strong>16:00</strong> on <strong>30 Oct</strong>. The live S&P 500 is <strong>7,720</strong>. <strong class='plus'>So far the live index is 19 points over that guess</strong>.</p><svg class='call-plot' viewBox='0 0 640 76' role='img' aria-label='Still waiting' style='font-family:ui-sans-serif,sans-serif'><line x1='18' y1='22' x2='622' y2='22' stroke='#e4ddd2'/><line x1='76.5' y1='14' x2='563.5' y2='14' stroke='#0c7a3a' stroke-width='1.5' stroke-dasharray='3 3'/><circle cx='563.5' cy='22' r='7' fill='none' stroke='#746c62' stroke-width='2'/><circle cx='76.5' cy='22' r='4' fill='#6b3fa0'/><circle cx='563.5' cy='22' r='4' fill='#0c7a3a'/><text x='563.5' y='38' text-anchor='middle' font-size='11' fill='#1c1915'>When 7,720</text><text x='76.5' y='38' text-anchor='middle' font-size='11' fill='#1c1915'>Predicted 7,701</text><text x='563.5' y='54' text-anchor='middle' font-size='11' fill='#1c1915'>Live 7,720</text></svg></section></div>
+  <div class='matters'><section><h2>What moved this hour<span class='impact minus'>-37</span></h2><p class='deck'>Points these stories added to this hour's score. Bigger numbers moved it more.</p><div class='matter ok'><span class='name'>World</span><span class='line'>ES is -37 points versus the last close.</span><span class='impact minus'>-37</span></div>
+<div class='matter ok'><span class='name'>Scout</span><span class='line'>Scout looked across the web. 1 new story, 1 new source.</span><span class='impact flat'>0</span></div></section><section><h2>No clear story</h2><p class='deck'>Amber is waiting. Red had no answer. Neither is in this hour's number.</p><div class='matter idle'><span class='name'>Crude</span><span class='line'>No clear story</span></div>
+<div class='matter idle'><span class='name'>Dollar</span><span class='line'>No clear story</span></div>
+<div class='matter idle'><span class='name'>Policy</span><span class='line'>No clear story</span></div>
+<div class='matter idle'><span class='name'>Flows</span><span class='line'>No clear story</span></div>
+<div class='matter idle'><span class='name'>Weights</span><span class='line'>No clear story</span></div>
+<div class='matter idle'><span class='name'>Options</span><span class='line'>No clear story</span></div>
+<div class='matter idle'><span class='name'>Boss</span><span class='line'>Watching. Every agent is working.</span></div></section></div>
+  <figure class="errors"><svg viewBox='0 0 400 160'><text x='20' y='80' fill='#746c62'>No error curve yet.</text></svg><figcaption>Each dot is one past hour's guess, oldest on the left. Below zero, the guess was too high. Above zero, it was too low. The dashed line is the average miss.</figcaption></figure>
+  <section class='roster'><div class='roster-head'><span>Agents</span><span class='count'>8 of 8</span></div><p class='deck'>This hour, then earlier hours. Each line says who answered and how this hour's score was made.</p><div class='agent idle'><span class='dot idle'></span><span class='name'>Boss</span><span class='line'>Watching. Every agent is working.</span></div>
+<div class='agent ok'><span class='dot ok'></span><span class='name'>World</span><span class='line'>ES is -37 points versus the last close.</span><span class='impact minus'>-37</span></div>
+<div class='agent idle'><span class='dot idle'></span><span class='name'>Crude</span><span class='line'>No clear story</span></div>
+<div class='agent idle'><span class='dot idle'></span><span class='name'>Dollar</span><span class='line'>No clear story</span></div>
+<div class='agent idle'><span class='dot idle'></span><span class='name'>Policy</span><span class='line'>No clear story</span></div>
+<div class='agent idle'><span class='dot idle'></span><span class='name'>Flows</span><span class='line'>No clear story</span></div>
+<div class='agent idle'><span class='dot idle'></span><span class='name'>Weights</span><span class='line'>No clear story</span></div>
+<div class='agent idle'><span class='dot idle'></span><span class='name'>Options</span><span class='line'>No clear story</span></div>
+<div class='agent ok'><span class='dot ok'></span><span class='name'>Scout</span><span class='line'>Scout looked across the web. 1 new story, 1 new source.</span><span class='impact flat'>0</span></div>
+<div class='agent ok'><span class='dot ok'></span><span class='name'>Board</span><span class='line'>Open -37. Range 9.</span><span class='impact minus'>-19</span></div><p class='how'>The score this hour was -19. World added -37: ES is -37 points versus the last close. Scout reported: Scout looked across the web. 1 new story, 1 new source. Crude, Dollar, Policy, Flows, Weights and Options had no clear story.</p></section>
+  <section class='news' id='news'><div class='roster-head'><span>News</span></div><p class='deck'>These are old weights, not today's news. A bigger number means that kind of story has moved the hour's score by more points.</p><p class='deck wait'>These weights start after a story is checked.</p></section>
+  <section class='learn' id='learning'><div class='roster-head'><span>Later checks</span></div><p class='deck'>The line is this score. Above 50, the later miss is smaller. The grey line is 50, no change. The word next to the score is used only after 4 different closes. Each card shows that score, then the points added to this hour's score. Above zero on the card, the row has been too low.</p><p class='deck wait'>The board line starts after 4 checked guesses.</p><div class='learn-grid'></div><p class='deck wait'>Not enough scores for Board, World, Crude, Dollar, Policy, Flows, Weights, Options, Scout.</p></section>
+  
+</main>
+<script>
+const lastRaw = document.getElementById("status").dataset.last;
+const freshMs = 75 * 60 * 1000;
+function paint() {
+  const light = document.getElementById("light");
+  const state = document.getElementById("state");
+  const next = document.getElementById("next-run");
+  const now = Date.now();
+  const last = lastRaw ? Date.parse(lastRaw) : NaN;
+  const alive = !Number.isNaN(last) && (now - last) < freshMs;
+  light.className = alive ? "light on" : "light";
+  state.textContent = alive ? "Fresh" : "";
+  const parts = new Intl.DateTimeFormat("en-US", {timeZone: "America/New_York", hour: "2-digit", minute: "2-digit", second: "2-digit", hourCycle: "h23"}).formatToParts(new Date(now));
+  const map = {};
+  parts.forEach(function (part) { map[part.type] = part.value; });
+  const remain = ((60 - Number(map.minute)) * 60 - Number(map.second) + 3600) % 3600 || 3600;
+  const mins = Math.floor(remain / 60);
+  next.textContent = mins >= 1 ? ("Next update in " + mins + " min") : ("Next update in " + remain + " sec");
+}
+paint();
+setInterval(paint, 1000);
+function markX(price) {
+  const lo = +board.dataset.lo, hi = +board.dataset.hi;
+  const pad = +board.dataset.pad, width = +board.dataset.width;
+  const x = pad + (price - lo) / ((hi - lo) || 1) * (width - 2 * pad);
+  return Math.max(8, Math.min(width - 8, x));
+}
+function fitMarks(data) {
+  if (!board) return;
+  const anchor = +board.dataset.anchor, mu = +(board.dataset.mu || 0), sigma = +board.dataset.sigma;
+  const mid = anchor + mu;
+  const low = mid - sigma, high = mid + sigma;
+  const pts = [low, high];
+  if (data.spx && data.spx.price != null) pts.push(+data.spx.price);
+  if (data.es && data.es.price != null) pts.push(+data.es.price);
+  const cushion = Math.max(sigma * 0.25, 2.51983633399906);
+  board.dataset.lo = Math.min.apply(null, pts) - cushion;
+  board.dataset.hi = Math.max.apply(null, pts) + cushion;
+  const x0 = markX(low), x1 = markX(high), xa = markX(anchor);
+  const shade = document.getElementById("band-shade");
+  shade.setAttribute("x", x0);
+  shade.setAttribute("width", Math.max(1, x1 - x0));
+  const axis = document.getElementById("band-anchor");
+  axis.setAttribute("x1", xa);
+  axis.setAttribute("x2", xa);
+  document.getElementById("range-low").setAttribute("x", x0);
+  document.getElementById("range-high").setAttribute("x", x1);
+  document.getElementById("range-anchor").setAttribute("x", xa);
+}
+function setMark(dotId, readId, stateId, quote) {
+  const dot = document.getElementById(dotId);
+  const read = document.getElementById(readId);
+  const state = document.getElementById(stateId);
+  if (!dot || !read || !state) return;
+  if (!quote || quote.price == null) {
+    dot.setAttribute("visibility", "hidden");
+    read.textContent = "—";
+    state.textContent = "Closed";
+    state.className = "pill";
+    return;
+  }
+  dot.setAttribute("cx", markX(+quote.price));
+  dot.setAttribute("visibility", "visible");
+  read.textContent = Math.round(+quote.price).toLocaleString("en-US");
+  state.textContent = quote.live ? "Live" : "Closed";
+  state.className = quote.live ? "pill on" : "pill";
+}
+function pullPrices() {
+  if (!board) return;
+  fetch("prices.json", {cache: "no-store"}).then(function (res) {
+    if (!res.ok) return null;
+    return res.json();
+  }).then(function (data) {
+    if (!data) return;
+    fitMarks(data);
+    setMark("spot-dot", "spot-read", "spot-state", data.spx);
+    setMark("gift-dot", "gift-read", "gift-state", data.es);
+    const title = document.getElementById("spot-title");
+    if (title && data.spx && data.spx.price != null) {
+      title.textContent = "S&P 500 " + Math.round(+data.spx.price).toLocaleString("en-US");
+    }
+  }).catch(function () {});
+}
+const board = document.getElementById("range-board");
+pullPrices();
+setInterval(pullPrices, 15000);
+</script>
+</body>
+</html>

@@ -1,0 +1,1 @@
+study the desktop/niftypredictorteam folder on my local desktop. the application is designed to predict nifty50 index 24 hrs ahead. i want you to translate every logic the app follows but predict s&p500 index of usa instread of nifty50. i want an exact replica of the process but focussed on s&p500 index value. you will make a new repo in git/pk1codes for hosting the output.
