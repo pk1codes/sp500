@@ -195,44 +195,37 @@ def test_called_level_sits_beside_the_live_nifty():
     call = Ensemble(id="e", ts="2026-10-19T10:00:00-04:00", mu=15, sigma=20, n_shocks=1, nifty_level=24900)
     page = render_page(call, [], [], 24910, 0, history=[done, call])
     card = page.split("aria-label='Prediction against the S&P 500'", 1)[1].split("</section>", 1)[0]
-    assert "Prediction was made when the S&P 500 was" in card
+    assert "News score for the 4:00 pm close" in card
+    assert ">Then<" in card
+    assert ">Guess<" in card
+    assert ">Close<" in card
+    assert ">Now<" in card
     assert "24,800" in card
-    assert "at <strong>10:00</strong> on <strong>16 Oct</strong>" in card
-    assert "would be" in card
+    assert "10:00 · 16 Oct" in card
     assert "24,840" in card
-    assert "at <strong>16:00</strong> on <strong>16 Oct</strong>" in card
-    assert "The S&P 500 was <strong>24,810</strong> then" in card
+    assert "16:00 · 16 Oct" in card
     assert "24,810" in card
-    assert "The guess was 30 points too high" in card
-    assert "This prediction was made when the S&P 500 was" in card
+    assert "30 points too high" in card
     assert "24,900" in card
-    assert "at <strong>10:00</strong> on <strong>19 Oct</strong>" in card
-    assert "will be" in card
+    assert "10:00 · 19 Oct" in card
     assert "24,915" in card
-    assert "at <strong>16:00</strong> on <strong>19 Oct</strong>" in card
-    assert "The live S&P 500 is" in card
+    assert "16:00 · 19 Oct" in card
     assert "24,910" in card
-    assert "So far the live index is 5 points under that guess" in card
+    assert ">Live<" in card
+    assert "-5 vs guess" in card
     assert "aria-label='Last close'" in card
     assert "aria-label='Still waiting'" in card
-    assert "When 24,800" in card
-    assert "Predicted 24,840" in card
-    assert "Seen 24,810" in card
-    assert "When 24,900" in card
-    assert "Predicted 24,915" in card
-    assert "Live 24,910" in card
-    assert "stroke='#c62828'" in card
+    assert "fill='#c62828'" in card
+    assert "When 24,800" not in card
     pending = render_page(call, [], [], None, 0)
-    assert "will be" in pending
     assert "24,915" in pending
     assert "The live S&P 500 is" not in pending
-    assert " then (" not in pending
+    assert ">Live<" not in pending
     open_plot = pending.split("aria-label='Still waiting'", 1)[1].split("</svg>", 1)[0]
-    assert "When 24,900" in open_plot
-    assert "Predicted 24,915" in open_plot
     assert "Live " not in open_plot
+    assert "Waiting" in pending
     blank = render_page(None, [], [], 24810, 0)
-    assert "Prediction was made" not in blank
+    assert "This hour's past guesses" not in blank
 
 
 def test_topline_puts_the_last_close_next_open_and_gift_first():

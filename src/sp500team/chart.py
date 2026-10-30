@@ -187,9 +187,16 @@ def render_page(
   .ahead .name {{ width: auto; flex: 1; }}
   .ahead .matter {{ margin-top: 0; padding: 8px 0; border-radius: 0; background: transparent; border-top: 1px solid #f0ebe3; }}
   .ahead .due {{ margin: 0 0 4px; color: #746c62; font: 13px/1.35 ui-sans-serif, sans-serif; }}
-  .compare .story {{ margin: 8px 0 0; color: #1c1915; font: 16px/1.5 ui-sans-serif, sans-serif; }}
-  .compare .story strong {{ font-variant-numeric: tabular-nums; }}
-  .compare .call-plot {{ margin: 2px 0 8px; }}
+  .compare .chip {{ flex: none; letter-spacing: 0; text-transform: none; padding: 4px 9px; border-radius: 999px; background: #f4f1ea; color: #5e584f; font: 600 13px/1.2 ui-sans-serif, sans-serif; font-variant-numeric: tabular-nums; }}
+  .compare .chip.plus {{ background: #e7f5ec; color: #0c7a3a; }}
+  .compare .chip.minus {{ background: #fdeceb; color: #c62828; }}
+  .compare .guess-block > .chip {{ display: inline-block; margin-top: 8px; }}
+  .compare .guess-block + .guess-block {{ margin-top: 14px; padding-top: 12px; border-top: 1px solid #f0ebe3; }}
+  .compare .guess-grid {{ display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; margin-top: 10px; }}
+  .compare .guess-grid span {{ display: block; color: #746c62; font: 600 11px/1.2 ui-sans-serif, sans-serif; letter-spacing: .06em; text-transform: uppercase; }}
+  .compare .guess-grid b {{ display: block; margin-top: 4px; color: #1c1915; font: 600 26px/1 ui-sans-serif, sans-serif; letter-spacing: -.03em; font-variant-numeric: tabular-nums; }}
+  .compare .guess-grid small {{ display: block; margin-top: 4px; color: #746c62; font: 600 13px/1.2 ui-sans-serif, sans-serif; font-variant-numeric: tabular-nums; }}
+  .compare .guess-track {{ margin-top: 8px; }}
   .learn, .news {{ margin-top: 16px; }}
   .news {{ background: #fff; border: 1px solid #e4ddd2; border-radius: 16px; overflow: hidden; box-shadow: inset 3px 0 0 #1d4e89; }}
   .news-cols {{ display: grid; grid-template-columns: 1fr 1fr; gap: 16px; padding: 0 14px 14px; }}
@@ -269,8 +276,8 @@ def render_page(
   @media (max-width: 800px) {{
     .mast {{ flex-direction: column; align-items: flex-start; }}
     .sub {{ font-size: 30px; }}
-    .split, .matters, .desk, .stats, .feed-row, .learn-grid, .news-cols, .top-grid {{ grid-template-columns: 1fr; }}
-    .compare .story {{ font-size: 15px; }}
+    .split, .matters, .desk, .stats, .feed-row, .learn-grid, .news-cols, .top-grid, .compare .guess-grid {{ grid-template-columns: 1fr; }}
+    .compare .guess-grid b {{ font-size: 22px; }}
   }}
 </style>
 </head>
@@ -734,115 +741,109 @@ def _glance_plot(marks: list[tuple[str, float, str]]) -> str:
 
 def _compare_html(ensemble: Ensemble | None, history: list[Ensemble], nifty: float | None = None) -> str:
     finished, forward = _settled_calls(ensemble, history)
-    stories = []
+    blocks = []
     if finished is not None and finished.nifty_level is not None and finished.actual is not None:
-        stories.append(f"<p class='story'>{_scored_call(finished)}</p>{_scored_plot(finished)}")
+        blocks.append(_guess_block(finished, None, live=False, show_chip=forward is not None and forward.nifty_level is not None))
     if forward is not None and forward.nifty_level is not None:
-        stories.append(f"<p class='story'>{_open_call(forward, nifty)}</p>{_open_plot(forward, nifty)}")
-    if not stories:
+        blocks.append(_guess_block(forward, nifty, live=True, show_chip=False))
+    if not blocks:
         return ""
-    body = "".join(stories)
+    primary = forward if forward is not None and forward.nifty_level is not None else finished
+    chip = _result_chip(primary, nifty if primary is forward else None, live=primary is forward)
     return (
         "<section class='compare' aria-label='Prediction against the S&P 500'>"
-        "<h2>This hour's past guesses</h2>"
-        "<p class='deck'>These guesses come from the news score. They are not the 24-hour range.</p>"
-        f"{body}"
+        f"<h2>This hour's past guesses{chip}</h2>"
+        "<p class='deck'>News score for the 4:00 pm close. Not the 24-hour range.</p>"
+        f"{''.join(blocks)}"
         "</section>"
     )
 
 
-def _scored_call(row: Ensemble) -> str:
-    made = parse_ts(row.ts)
-    due = session_close(made)
-    anchor = row.nifty_level or 0
-    predicted = anchor + row.mu
-    observed = anchor + (row.actual or 0)
-    made_at, made_on = _stamp_bits(made)
-    due_at, due_on = _stamp_bits(due)
-    return (
-        f"Prediction was made when the S&P 500 was {_bold(_level_text(anchor))} "
-        f"at {_bold(made_at)} on {_bold(made_on)}. "
-        f"It predicted the S&P 500 would be {_bold(_level_text(predicted))} "
-        f"at {_bold(due_at)} on {_bold(due_on)}. "
-        f"The S&P 500 was {_bold(_level_text(observed))} then. "
-        f"{_miss_phrase(observed - predicted, live=False)}."
-    )
-
-
-def _open_call(row: Ensemble, nifty: float | None) -> str:
+def _guess_block(row: Ensemble, seen: float | None, live: bool, show_chip: bool) -> str:
     made = parse_ts(row.ts)
     due = session_close(made)
     anchor = row.nifty_level or 0
     predicted = anchor + row.mu
     made_at, made_on = _stamp_bits(made)
     due_at, due_on = _stamp_bits(due)
-    sentence = (
-        f"This prediction was made when the S&P 500 was {_bold(_level_text(anchor))} "
-        f"at {_bold(made_at)} on {_bold(made_on)}. "
-        f"It predicts the S&P 500 will be {_bold(_level_text(predicted))} "
-        f"at {_bold(due_at)} on {_bold(due_on)}."
-    )
-    if nifty is None:
-        return sentence
+    if live:
+        third_name = "Now"
+        third_value = None if seen is None else seen
+        third_note = "Waiting" if seen is None else "Live"
+        track_seen = seen
+        track_label = "Still waiting"
+    else:
+        third_name = "Close"
+        third_value = anchor + (row.actual or 0)
+        third_note = f"{due_at} · {due_on}"
+        track_seen = third_value
+        track_label = "Last close"
+    chip = _result_chip(row, track_seen, live=live) if show_chip else ""
     return (
-        f"{sentence} The live S&P 500 is {_bold(_level_text(nifty))}. "
-        f"{_miss_phrase(nifty - predicted, live=True)}."
+        "<div class='guess-block'>"
+        f"{chip}"
+        "<div class='guess-grid'>"
+        f"<div><span>Then</span><b>{_level_text(anchor)}</b><small>{escape(made_at)} · {escape(made_on)}</small></div>"
+        f"<div><span>Guess</span><b>{_level_text(predicted)}</b><small>{escape(due_at)} · {escape(due_on)}</small></div>"
+        f"<div><span>{third_name}</span><b>{'—' if third_value is None else _level_text(third_value)}</b><small>{escape(third_note)}</small></div>"
+        "</div>"
+        f"{_guess_track(anchor, predicted, track_seen, track_label)}"
+        "</div>"
     )
 
 
-def _scored_plot(row: Ensemble) -> str:
+def _result_chip(row: Ensemble | None, seen: float | None, live: bool) -> str:
+    if row is None or row.nifty_level is None:
+        return ""
+    if live and seen is None:
+        return ""
     anchor = row.nifty_level or 0
     predicted = anchor + row.mu
-    observed = anchor + (row.actual or 0)
-    return _call_plot(anchor, predicted, observed, "Seen", "Last close")
+    gap = (seen if seen is not None else 0) - predicted
+    kind = impact_class(gap)
+    points = abs(int(round(gap)))
+    if live:
+        text = "0 vs guess" if points == 0 else f"{impact_text(gap)} vs guess"
+    elif points == 0:
+        text = "Matched the close"
+    else:
+        way = "too high" if gap < 0 else "too low"
+        text = f"{points} points {way}"
+    return f"<span class='chip {kind}'>{escape(text)}</span>"
 
 
-def _open_plot(row: Ensemble, nifty: float | None) -> str:
-    anchor = row.nifty_level or 0
-    predicted = anchor + row.mu
-    return _call_plot(anchor, predicted, nifty, "Live", "Still waiting")
-
-
-def _call_plot(anchor: float, predicted: float, seen: float | None, seen_name: str, label: str) -> str:
-    marks: list[tuple[str, float, str]] = [
-        ("When", anchor, "#746c62"),
-        ("Predicted", predicted, "#6b3fa0"),
-    ]
-    if seen is not None:
-        marks.append((seen_name, seen, {"plus": "#0c7a3a", "minus": "#c62828", "flat": "#5e584f"}[impact_class(seen - predicted)]))
-    lo, hi = _call_bounds([value for _name, value, _color in marks])
-    width, pad_x, baseline = 640, 18, 22
+def _guess_track(anchor: float, predicted: float, seen: float | None, label: str) -> str:
+    values = [anchor, predicted] if seen is None else [anchor, predicted, seen]
+    lo, hi = _call_bounds(values)
+    width, pad_x, baseline = 640, 18, 14
     span = hi - lo or 1
 
     def sx(value: float) -> float:
         return pad_x + (value - lo) / span * (width - 2 * pad_x)
 
-    placed = [(name, sx(value), color, f"{name} {_level_text(value)}") for name, value, color in marks]
-    spans = [_label_span(x, text, width) for _name, x, _color, text in placed]
-    rows = _label_rows(spans)
-    height = baseline + 16 + (max(rows) + 1) * 16 + 6
+    seen_color = "#5e584f"
+    if seen is not None:
+        seen_color = {"plus": "#0c7a3a", "minus": "#c62828", "flat": "#5e584f"}[impact_class(seen - predicted)]
     parts = [
-        f"<svg class='call-plot' viewBox='0 0 {width} {height}' role='img' aria-label='{escape(label)}' "
+        f"<svg class='guess-track' viewBox='0 0 {width} 28' role='img' aria-label='{escape(label)}' "
         "style='font-family:ui-sans-serif,sans-serif'>"
-        f"<line x1='{pad_x}' y1='{baseline}' x2='{width - pad_x}' y2='{baseline}' stroke='#e4ddd2'/>"
+        f"<line x1='{pad_x}' y1='{baseline}' x2='{width - pad_x}' y2='{baseline}' stroke='#e4ddd2' stroke-width='4' stroke-linecap='round'/>"
     ]
     if seen is not None:
         left, right = sorted((sx(predicted), sx(seen)))
         parts.append(
-            f"<line x1='{left:.1f}' y1='{baseline - 8}' x2='{right:.1f}' y2='{baseline - 8}' "
-            f"stroke='{marks[-1][2]}' stroke-width='1.5' stroke-dasharray='3 3'/>"
+            f"<line x1='{left:.1f}' y1='{baseline}' x2='{right:.1f}' y2='{baseline}' stroke='{seen_color}' stroke-width='4' stroke-linecap='round'/>"
         )
-    same = [x for _name, x, _color, _text in placed]
-    for name, x, color, _text in placed:
-        if name == "When" and sum(abs(x - other) < 1 for other in same) > 1:
-            parts.append(f"<circle cx='{x:.1f}' cy='{baseline}' r='7' fill='none' stroke='{color}' stroke-width='2'/>")
-        else:
-            parts.append(f"<circle cx='{x:.1f}' cy='{baseline}' r='4' fill='{color}'/>")
-    for (_name, _x, _color, text), (lx, anchor_name, _left, _right), row in zip(placed, spans, rows):
-        y = baseline + 16 + row * 16
+    same_price = seen is not None and _level_text(anchor) == _level_text(seen)
+    if same_price:
         parts.append(
-            f"<text x='{lx:.1f}' y='{y}' text-anchor='{anchor_name}' font-size='11' fill='#1c1915'>{escape(text)}</text>"
+            f"<circle cx='{sx(seen):.1f}' cy='{baseline}' r='8' fill='none' stroke='#746c62' stroke-width='2'/>"
         )
+    elif abs(sx(anchor) - sx(predicted)) >= 1:
+        parts.append(f"<circle cx='{sx(anchor):.1f}' cy='{baseline}' r='4' fill='#746c62'/>")
+    parts.append(f"<circle cx='{sx(predicted):.1f}' cy='{baseline}' r='5' fill='#6b3fa0' stroke='#fff' stroke-width='1.5'/>")
+    if seen is not None:
+        parts.append(f"<circle cx='{sx(seen):.1f}' cy='{baseline}' r='5' fill='{seen_color}' stroke='#fff' stroke-width='1.5'/>")
     parts.append("</svg>")
     return "".join(parts)
 
@@ -883,24 +884,6 @@ def _label_rows(spans: list[tuple[float, str, float, float]]) -> list[int]:
 
 def _stamp_bits(stamp: datetime) -> tuple[str, str]:
     return stamp.strftime("%H:%M"), stamp.strftime("%d %b")
-
-
-def _bold(text: str) -> str:
-    return f"<strong>{escape(text)}</strong>"
-
-
-def _miss_phrase(gap: float, live: bool) -> str:
-    points = abs(int(round(gap)))
-    kind = impact_class(gap)
-    if points == 0:
-        text = "So far the live index matches that guess" if live else "The guess matched the close"
-    elif live:
-        side = "under" if gap < 0 else "over"
-        text = f"So far the live index is {points} points {side} that guess"
-    else:
-        way = "too high" if gap < 0 else "too low"
-        text = f"The guess was {points} points {way}"
-    return f"<strong class='{kind}'>{text}</strong>"
 
 
 def _settled_calls(ensemble: Ensemble | None, history: list[Ensemble]) -> tuple[Ensemble | None, Ensemble | None]:
